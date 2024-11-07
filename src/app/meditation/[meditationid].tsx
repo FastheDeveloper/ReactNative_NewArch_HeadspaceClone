@@ -10,11 +10,20 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 
 export default function MeditationDetails() {
   const { meditationid } = useLocalSearchParams<{ meditationid: string }>();
   const meditation = meditations.find((m) => m.id === Number(meditationid));
   const { top, bottom } = useSafeAreaInsets();
+  const player=useAudioPlayer(require('../../../assets/meditations/audio1.mp3'))
+  const status=useAudioPlayerStatus(player)
+
+  const formatSeconds=(milliseconds:number)=>{
+    const minutes=Math.floor(milliseconds/60000)
+    const seconds=Math.floor((milliseconds%60000)/1000);
+    return `${minutes}:${seconds.toString().padStart(2,'0')}`
+  }
   if (!meditation) {
     return <Text> Meditation not found</Text>;
   }
@@ -46,8 +55,8 @@ export default function MeditationDetails() {
 
         {/* PlayPause */}
 
-        <Pressable className="bg-zinc-800 self-center w-20 aspect-square rounded-full justify-center items-center">
-          <FontAwesome6 name="play" size={30} color={"white"} />
+        <Pressable onPress={()=>player.playing ?player.pause() :player.play()} className="bg-zinc-800 self-center w-20 aspect-square rounded-full justify-center items-center">
+          <FontAwesome6 name={status.playing? "pause":"play"} size={30} color={"white"} />
         </Pressable>
 
         {/* footer Player */}
@@ -69,16 +78,17 @@ export default function MeditationDetails() {
               style={{ width: '100%', height: 40 }}
               minimumValue={0}
               maximumValue={1}
-              value={0.5}
-              onSlidingComplete={(value)=>console.log(value)}
+              value={status.currentTime/status.duration}
+              onSlidingComplete={(value)=>player.seekTo(value*status.duration)}
               minimumTrackTintColor="#3A3937"
               maximumTrackTintColor="#3A393735"
               thumbTintColor="#3A3937"
+              
             />
           </View>
           <View className="flex-row justify-between">
-            <Text>0.32</Text>
-            <Text>12.32</Text>
+            <Text>{formatSeconds(status.currentTime)}</Text>
+            <Text>{formatSeconds(status.duration)}</Text>
           </View>
         </View>
       </View>
